@@ -32,13 +32,6 @@
 
 using namespace glow;
 
-class OperatorStatelessTest : public BackendStatelessTest {};
-
-class OperatorTest : public BackendTest {
-protected:
-  PlaceholderBindings bindings_;
-};
-
 /// Helper to create a Placeholder; if \p T is quantized, then it will include a
 /// dummy scale and offset, otherwise it will not.
 static Placeholder *createPlaceholderConditionallyQuantized(
@@ -2242,45 +2235,6 @@ TEST_P(OperatorTest, weightedSum) {
   EXPECT_NEAR(resultH.at({0, 1}), 60.2, 1E-5);
   EXPECT_NEAR(resultH.at({1, 0}), 70.3, 1E-5);
   EXPECT_NEAR(resultH.at({1, 1}), 80.4, 1E-5);
-}
-
-/// Helper to test ReluSimple using \p DTy.
-template <typename DataType>
-static void testReluSimple(glow::PlaceholderBindings &bindings,
-                           glow::Module &mod, glow::Function *F,
-                           glow::ExecutionEngine &EE, ElemKind DTy) {
-  auto *in = mod.createPlaceholder(DTy, {7}, "in", false);
-  auto *relu = F->createRELU("relu", in);
-  auto *save = F->createSave("relu", relu);
-  auto *result = bindings.allocate(save->getPlaceholder());
-
-  bindings.allocate(in)->getHandle<DataType>() = {0, -1, -2, -3, 4, 5, 6};
-
-  EE.compile(CompilationMode::Infer);
-  EE.run(bindings);
-
-  auto resultH = result->getHandle<DataType>();
-
-  for (size_t i = 0; i < 7; i++) {
-    if (i < 4) {
-      EXPECT_EQ(resultH.raw(i), static_cast<DataType>(0));
-    } else {
-      EXPECT_EQ(resultH.raw(i), static_cast<DataType>(i));
-    }
-  }
-}
-
-/// Verify that the RELU operator works correctly for Float.
-TEST_P(OperatorTest, ReluSimple_Float) {
-  CHECK_IF_ENABLED();
-
-  testReluSimple<float>(bindings_, mod_, F_, EE_, ElemKind::FloatTy);
-}
-
-/// Verify that the RELU operator works correctly for Float16.
-TEST_P(OperatorTest, ReluSimple_Float16) {
-  CHECK_IF_ENABLED();
-  testReluSimple<float16_t>(bindings_, mod_, F_, EE_, ElemKind::Float16Ty);
 }
 
 /// Helper to test PReluSimple using \p DTy.

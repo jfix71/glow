@@ -97,6 +97,13 @@ protected:
   Function *F_;
 };
 
+class OperatorStatelessTest : public BackendStatelessTest {};
+
+class OperatorTest : public BackendTest {
+protected:
+  PlaceholderBindings bindings_;
+};
+
 static const auto all_backends = ::testing::Values(
 #ifdef GLOW_WITH_NNPI
     "NNPI",
